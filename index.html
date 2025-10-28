@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>N Clock + Stopwatch</title>
+<style>
+  html, body {
+    margin:0; padding:0;
+    width:100%; height:100%;
+    background:black;
+    display:flex; flex-direction:column;
+    justify-content:center; align-items:center;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color:white;
+  }
+
+  /* 時計 */
+  #clock {
+    font-size:200px;
+    text-align:center;
+    margin-bottom:20px;
+  }
+
+  /* ストップウォッチ */
+  #stopwatch {
+    font-size:100px;
+    text-align:center;
+    margin-bottom:20px;
+  }
+
+  /* スライダー */
+  #controls {
+    color:#ccc;
+    font-size:24px;
+    text-align:center;
+    margin-top:20px;
+    width:100%;
+    max-width:500px;
+  }
+
+  input[type=range] {
+    width:100%;
+    height:40px;
+    -webkit-appearance: none;
+    margin-top:10px;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width:30px; height:30px;
+    background:black; /* つまみを黒色に */
+    border-radius:50%;
+    border:2px solid white;
+    cursor:pointer;
+    box-shadow: 0 2px 4px rgba(255,255,255,0.3);
+  }
+
+  input[type=range]::-webkit-slider-runnable-track {
+    height:10px;
+    border-radius:5px;
+    background: #555;
+  }
+
+  /* 切替ボタン */
+  #modeButtons {
+    display:flex;
+    justify-content:center;
+    margin-bottom:20px;
+  }
+
+  #modeButtons button {
+    font-size:24px;
+    margin:0 10px;
+    padding:12px 30px;
+    border-radius:15px;
+    border:none;
+    cursor:pointer;
+    background:white;
+    color:black;
+    font-weight:600;
+    box-shadow:0 3px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+  }
+
+  #modeButtons button.active {
+    background:black;
+    color:white;
+    border:2px solid white;
+  }
+
+  #modeButtons button:hover {
+    opacity:0.9;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- モード切替ボタン -->
+<div id="modeButtons">
+  <button id="showClock" class="active">時計</button>
+  <button id="showStopwatch">ストップウォッチ</button>
+</div>
+
+<!-- 時計 -->
+<div id="clockContainer">
+  <div id="clock">00:00:00</div>
+  <div id="controls">
+    1日の長さ: <span id="dayLength">24</span> 時間
+    <br>
+    <input type="range" id="slider" min="12" max="48" value="24">
+  </div>
+</div>
+
+<!-- ストップウォッチ -->
+<div id="stopwatchContainer" style="display:none;">
+  <div id="stopwatch">00:00:00</div>
+  <div>
+    <button id="startStop">Start</button>
+    <button id="reset">Reset</button>
+  </div>
+</div>
+
+<script>
+const clock = document.getElementById('clock');
+const slider = document.getElementById('slider');
+const dayLengthDisplay = document.getElementById('dayLength');
+let customHours = 24;
+
+// スライダーで1日の長さ変更
+slider.addEventListener('input', () => {
+  customHours = parseInt(slider.value);
+  dayLengthDisplay.innerText = customHours;
+});
+
+// 時計更新
+function updateClock(){
+  const now = new Date();
+  const realSeconds = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+  const speed = 24 / customHours;
+  const customTotalSeconds = realSeconds * speed;
+
+  const h = Math.floor(customTotalSeconds / 3600) % 24;
+  const m = Math.floor(customTotalSeconds / 60) % 60;
+  const s = Math.floor(customTotalSeconds) % 60;
+
+  const hourStr = String(h).padStart(2,'0');
+  const minStr  = String(m).padStart(2,'0');
+  const secStr  = String(s).padStart(2,'0');
+
+  clock.innerText = `${hourStr}:${minStr}:${secStr}`;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ストップウォッチ
+let stopwatchSeconds = 0;
+let stopwatchRunning = false;
+
+const stopwatchDisplay = document.getElementById('stopwatch');
+const startStopButton = document.getElementById('startStop');
+const resetButton = document.getElementById('reset');
+
+startStopButton.addEventListener('click', () => {
+  stopwatchRunning = !stopwatchRunning;
+  startStopButton.innerText = stopwatchRunning ? 'Stop' : 'Start';
+});
+
+resetButton.addEventListener('click', () => {
+  stopwatchSeconds = 0;
+  updateStopwatchDisplay();
+});
+
+function updateStopwatchDisplay(){
+  const h = Math.floor(stopwatchSeconds / 3600);
+  const m = Math.floor(stopwatchSeconds / 60) % 60;
+  const s = stopwatchSeconds % 60;
+
+  const hourStr = String(h).padStart(2,'0');
+  const minStr  = String(m).padStart(2,'0');
+  const secStr  = String(s).padStart(2,'0');
+
+  stopwatchDisplay.innerText = `${hourStr}:${minStr}:${secStr}`;
+}
+
+// 時計の速さに連動
+setInterval(() => {
+  if(stopwatchRunning){
+    const speed = 24 / customHours;
+    stopwatchSeconds += Math.floor(speed);
+    updateStopwatchDisplay();
+  }
+},1000);
+
+updateStopwatchDisplay();
+
+// モード切替
+const clockContainer = document.getElementById('clockContainer');
+const stopwatchContainer = document.getElementById('stopwatchContainer');
+const showClockBtn = document.getElementById('showClock');
+const showStopwatchBtn = document.getElementById('showStopwatch');
+
+showClockBtn.addEventListener('click',()=>{
+  clockContainer.style.display = 'block';
+  stopwatchContainer.style.display = 'none';
+  showClockBtn.classList.add('active');
+  showStopwatchBtn.classList.remove('active');
+});
+
+showStopwatchBtn.addEventListener('click',()=>{
+  clockContainer.style.display = 'none';
+  stopwatchContainer.style.display = 'block';
+  showStopwatchBtn.classList.add('active');
+  showClockBtn.classList.remove('active');
+});
+</script>
+
+</body>
+</html>
